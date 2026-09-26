@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { goalExecution, presentGoalActivity } from "../../../node_modules/.cache/loopx-goal-activity/goal-activity.js";
+import { goalExecution, goalWorkKind, presentGoalActivity } from "../../../node_modules/.cache/loopx-goal-activity/goal-activity.js";
 
 // One Goal's session facts, mixed by mode. `updated_at` stands for the time the
 // owner last recorded anything for that session.
@@ -96,5 +96,19 @@ for (const completeness of ["incomplete", undefined]) {
   });
   assert.equal(partialIdle.alsoKey, "activity.inHost", "an incomplete sample never proves all threads idle");
 }
+
+// `goalWorkKind` is the single rule the brief and the home lanes share: a claim
+// is never execution, and only a managed turn counts as executing.
+assert.equal(goalWorkKind({ execution: managed }), "executing", "A managed turn executes");
+assert.equal(goalWorkKind({ execution: quiet }), "executing", "A silent managed turn is still executing, not claimed");
+assert.equal(goalWorkKind({ execution: claim }), "claimed", "An attached-only claim is a claim, not execution");
+assert.equal(goalWorkKind({ execution: silentWithFreshClaim }), "executing", "A fresh claim never downgrades a managed turn");
+assert.equal(goalWorkKind({ execution: recentWithOldClaim }), "executing", "A stale claim never downgrades a managed turn");
+assert.equal(goalWorkKind({ execution: hostWithClaim }), "executing", "An observed host thread turn is execution, not a bare claim");
+assert.equal(goalWorkKind({ execution: { kind: "idle", hostSurfaces: [] } }), "none", "An idle Goal carries no unfinished turn");
+assert.equal(goalWorkKind({ execution: { kind: "unknown" } }), "none", "Unreadable execution is not unfinished work");
+assert.equal(goalWorkKind({}), "none", "A Goal without an execution fact carries no work kind");
+assert.equal(presentGoalActivity({ activationState: "active", execution: claim, state: "推进" }).labelKey, "activity.hostClaimed", "The chip names the claim");
+assert.equal(presentGoalActivity({ activationState: "active", execution: managed, state: "推进" }).labelKey, "activity.running", "The chip names managed execution");
 
 console.log("Goal execution read-model invariants passed");

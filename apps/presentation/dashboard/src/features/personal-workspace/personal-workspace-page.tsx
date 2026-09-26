@@ -60,6 +60,7 @@ import type {
   WorkspaceTodo,
 } from "./personal-workspace-model";
 import { goalHasExecutionSummary, goalTitleFor, workspaceHomeLaneForGoal } from "./personal-workspace-model";
+import { goalWorkKind } from "./goal-activity";
 import { WorkspaceActionForm, type WorkspaceActionDraft } from "./workspace-action-form";
 import { GoalActivityChip, GoalIdentityMark } from "./goal-activity-view";
 import { ManagerBrief } from "./manager-brief";
@@ -111,6 +112,7 @@ function ManagerHomeBoard({
   const activeHomeLanes = [
     { key: "needs_you", label: t("home.lane.needsYou") },
     { key: "running", label: t("home.lane.running") },
+    { key: "claimed", label: t("home.lane.claimed") },
     { key: "observing", label: t("home.lane.observing") },
     { key: "scheduled", label: t("home.lane.scheduled") },
   ] as const;
@@ -373,7 +375,7 @@ function defaultTimeline(model: WorkspaceModel, selectedGoalId: string | null, t
         goalTitle: goal.title,
         latestActivity: goal.agentSentence,
         runId: `goal:${goal.goalId}`,
-        status: goal.execution?.kind === "running" ? "running" : "failed",
+        status: goalWorkKind(goal) === "executing" ? "running" : "failed",
         title: goal.nextSentence,
         totalSteps: Math.max(
           (goal.doneTodoCount ?? 0) + goal.agentTodos.filter((todo) => !todo.done).length,
@@ -410,7 +412,7 @@ function defaultTimeline(model: WorkspaceModel, selectedGoalId: string | null, t
       goalTitle: goal.title,
       latestActivity: goal.agentSentence,
       runId: `goal:${goal.goalId}`,
-      status: goal.execution?.kind === "running" ? "running" : goal.state === "需修复" ? "failed" : goal.state === "已安排" ? "queued" : "waiting",
+      status: goalWorkKind(goal) === "executing" ? "running" : goal.state === "需修复" ? "failed" : goal.state === "已安排" ? "queued" : "waiting",
       title: goal.nextSentence,
       totalSteps: Math.max(
         (goal.doneTodoCount ?? 0) + goal.agentTodos.filter((todo) => !todo.done).length,

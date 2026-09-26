@@ -3,7 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { useWorkspaceI18n } from "./i18n";
 import type { WorkspaceGoal } from "./personal-workspace-model";
 import { workspaceHomeLaneForGoal } from "./personal-workspace-model";
-import { presentGoalActivity } from "./goal-activity";
+import { goalWorkKind, presentGoalActivity } from "./goal-activity";
 import { GoalIdentityMark, useExecutionDetail } from "./goal-activity-view";
 
 const briefRowLimit = 3;
@@ -17,7 +17,7 @@ function RunningMeta({ goal }: { goal: WorkspaceGoal }) {
 function BriefTile({ count, empty, kind, live = false, onSelectGoal, rows, title, total }: {
   count: number;
   empty: string;
-  kind: "needs" | "running" | "completed";
+  kind: "needs" | "running" | "claimed" | "completed";
   live?: boolean;
   onSelectGoal: (goalId: string) => void;
   rows: BriefRow[];
@@ -45,8 +45,9 @@ export function ManagerBrief({ goals, onSelectGoal }: { goals: WorkspaceGoal[]; 
   const { t } = useWorkspaceI18n();
   const active = goals.filter((goal) => goal.activationState === "active" && !goal.loadState);
   const needs = active.filter((goal) => workspaceHomeLaneForGoal(goal) === "needs_you");
-  const running = active.filter((goal) => goal.execution?.kind === "running");
-  const queued = active.filter((goal) => goal.state === "已安排" && goal.execution?.kind !== "running").length;
+  const running = active.filter((goal) => goalWorkKind(goal) === "executing");
+  const claimed = active.filter((goal) => goalWorkKind(goal) === "claimed");
+  const queued = active.filter((goal) => goal.state === "已安排" && goalWorkKind(goal) === "none").length;
   const executionRead = active.some((goal) => goal.execution && goal.execution.kind !== "unknown");
   const executionPending = active.some((goal) => !goal.execution);
   const completed = active.flatMap((goal) => goal.agentTodos
@@ -64,6 +65,9 @@ export function ManagerBrief({ goals, onSelectGoal }: { goals: WorkspaceGoal[]; 
       <BriefTile count={running.length} empty={runningEmpty} kind="running" live={running.some((goal) => presentGoalActivity(goal).live)} onSelectGoal={onSelectGoal}
         rows={running.map((goal) => ({ goal, key: goal.goalId, meta: <RunningMeta goal={goal} />, text: goal.title }))}
         title={t("brief.running")} total={running.length && queued ? t("brief.alsoQueued", { count: queued }) : null} />
+      {claimed.length ? <BriefTile count={claimed.length} empty={t("brief.claimedEmpty")} kind="claimed" onSelectGoal={onSelectGoal}
+        rows={claimed.map((goal) => ({ goal, key: goal.goalId, meta: <RunningMeta goal={goal} />, text: goal.title }))}
+        title={t("brief.claimed")} /> : null}
       <BriefTile count={completed.length} empty={t("brief.completedEmpty")} kind="completed" onSelectGoal={onSelectGoal}
         rows={completed} title={t("brief.completed")}
         total={completedTotal > completed.length ? t("brief.completedTotal", { count: completedTotal }) : null} />

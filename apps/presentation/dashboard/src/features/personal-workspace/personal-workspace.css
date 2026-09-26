@@ -275,7 +275,7 @@
 .personal-home-board { display: grid; gap: 12px; min-width: 0; }
 .personal-home-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px; min-width: 0; }
 .personal-brief-date { color: var(--pw-muted); font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
-.personal-brief { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; min-width: 0; }
+.personal-brief { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; min-width: 0; }
 .personal-brief-tile { display: grid; grid-template-rows: auto 1fr auto; gap: 10px; min-width: 0; padding: 14px 14px 12px; border: 1px solid var(--pw-line); border-radius: 12px; background: var(--pw-card); }
 .personal-brief-tile > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .personal-brief-tile > header span { color: var(--pw-muted); font-size: 12px; font-weight: 500; }
@@ -306,6 +306,7 @@
 .personal-home-lane > p { min-height: 34px; margin: 7px 0 10px; color: var(--pw-muted); font-size: 10.5px; line-height: 1.55; }
 .personal-home-lane.is-needs_you > header i { background: var(--pw-amber); }
 .personal-home-lane.is-running > header i { background: var(--pw-green); }
+.personal-home-lane.is-claimed > header i { background: #0f8f83; }
 .personal-home-lane.is-observing > header i { background: var(--pw-blue); }
 .personal-home-lane.is-scheduled > header i { background: #8b6bd8; }
 .personal-home-lane-list { display: grid; align-content: start; gap: 9px; }

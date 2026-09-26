@@ -142,15 +142,29 @@ type GoalActivityInput = {
   state: string;
 };
 
+/**
+ * The unfinished-work fact a Goal carries, in the vocabulary its chip and lane
+ * already show. `executing` needs a managed turn's own activity; an attached
+ * host claim alone is `claimed` and is never counted as execution.
+ */
+export type GoalWorkKind = "executing" | "claimed" | "none";
+
+/** `none` covers an idle, unreadable or absent execution, so only a live turn is actionable work. */
+export function goalWorkKind(goal: Pick<GoalActivityInput, "execution">): GoalWorkKind {
+  if (goal.execution?.kind !== "running") return "none";
+  return goal.execution.hostClaimed ? "claimed" : "executing";
+}
+
 export function presentGoalActivity(goal: GoalActivityInput): GoalActivity {
-  const execution = goal.activationState === "active" && goal.execution?.kind === "running" ? goal.execution : null;
-  const running = execution !== null;
-  const live = execution !== null && !execution.quiet && !execution.hostClaimed;
+  const work = goal.activationState === "active" ? goalWorkKind(goal) : "none";
+  const execution = work === "none" ? null : goal.execution as Extract<WorkspaceGoalExecution, { kind: "running" }>;
+  const running = work !== "none";
+  const live = work === "executing" && execution !== null && !execution.quiet;
   if (goal.activationState === "stopped" || goal.state === "已停止") return { labelKey: "state.stopped", tone: "stopped", live: false, alsoKey: null };
   if (goal.state === "等你" || goal.needsYou) return { labelKey: "state.needsYou", tone: "attention", live, alsoKey: running ? "activity.alsoRunning" : null };
   if (goal.state === "需修复") return { labelKey: "state.needsRepair", tone: "danger", live, alsoKey: running ? "activity.alsoRunning" : null };
-  if (execution?.hostClaimed) return { labelKey: "activity.hostClaimed", tone: "running", live: false, alsoKey: null };
-  if (running) return { labelKey: "activity.running", tone: live ? "running" : "attention", live, alsoKey: null };
+  if (work === "claimed") return { labelKey: "activity.hostClaimed", tone: "running", live: false, alsoKey: null };
+  if (work === "executing") return { labelKey: "activity.running", tone: live ? "running" : "attention", live, alsoKey: null };
   if (goal.state === "等待条件") return { labelKey: "state.waiting", tone: "waiting", live: false, alsoKey: null };
   if (goal.state === "已安排") {
     const hostThreads = goal.hostThreadActivity?.threads ?? [];

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const source = (name) => readFileSync(new URL(name, import.meta.url), "utf8");
 const answerText = source("./answer-text.ts");
 const model = source("./personal-workspace-model.ts");
+const activity = source("./goal-activity.ts");
 const drawer = source("./context-drawer.tsx");
 const header = source("./channel-header.tsx");
 const sidebar = source("./goal-sidebar.tsx");
@@ -266,16 +267,18 @@ assert.match(chatData, /codexHostCapacitySchema/, "Codex host-capacity receipts 
 assert.match(drawer, /subagentHostCapacityRaise/, "Goal sub-agent preview discloses a required Codex capacity raise");
 assert.match(drawer, /subagentAppliedRestart/, "Applied host capacity tells the operator that a new Session is required");
 
-for (const lane of ["needs_you", "running", "observing", "scheduled", "history"]) {
+for (const lane of ["needs_you", "running", "claimed", "observing", "scheduled", "history"]) {
   assert.match(model, new RegExp(`"${lane}"`), `Manager home models the ${lane} lane`);
 }
 assert.match(model, /function workspaceHomeLaneForGoal/, "Manager lane projection is centralized and testable");
-assert.match(model, /goal\.execution\?\.kind === "running" \|\| goal\.state === "需修复"/, "Only an observed active turn or agent-owned repair work enters the running lane");
-for (const key of ["needsYou", "running", "observing", "scheduled"]) {
+assert.match(activity, /const work = goal\.activationState === "active" \? goalWorkKind\(goal\) : "none"/, "The claim/execution rule lives in one shared read-model helper");
+assert.match(model, /work === "executing"\) return "running"/, "Only a managed turn enters the running lane");
+assert.match(model, /work === "claimed"\) return "claimed"/, "A host claim gets its own lane instead of the running lane");
+for (const key of ["needsYou", "running", "claimed", "observing", "scheduled"]) {
   assert.match(page, new RegExp(`home\\.lane\\.${key}`), `Manager home renders localized ${key} lane copy`);
 }
 assert.match(page, /home\.history/, "Manager home renders localized history copy");
-assert.match(page, /personal-home-board/, "Manager home uses the four-lane workspace board");
+assert.match(page, /personal-home-board/, "Manager home uses the populated-lane workspace board");
 assert.doesNotMatch(page, /personal-worker-strip/, "Manager home omits the redundant Agent worker strip");
 assert.doesNotMatch(header, /切换到野兽主题|切换到默认主题/, "Workspace header does not expose theme switching");
 assert.match(workspaceTheme, /workspaceThemeStorageKey = "loopx-pw-theme"/, "Theme preference persists across reloads");

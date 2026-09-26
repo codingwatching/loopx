@@ -4,7 +4,7 @@ import type { ActionReviewPlan } from "../../../../../../loopx/control_plane/pre
 import type { GoalAcceptanceObservation } from "../../data/goal-acceptance-observation";
 import type { AttentionDetails } from "./attention-details";
 import type { WorkspaceLoadError } from "../../data/workspace-progressive-status";
-import type { GoalHostThreadActivity, WorkspaceGoalExecution } from "./goal-activity";
+import { goalWorkKind, type GoalHostThreadActivity, type WorkspaceGoalExecution } from "./goal-activity";
 export type WorkspaceGoalState =
   | "需修复"
   | "等你"
@@ -17,6 +17,7 @@ export type WorkspaceGoalState =
 export type WorkspaceHomeLane =
   | "needs_you"
   | "running"
+  | "claimed"
   | "observing"
   | "scheduled"
   | "history"
@@ -506,14 +507,19 @@ export function goalHasExecutionSummary(goal: Pick<WorkspaceGoal, "state">): boo
 }
 
 /**
- * Project the detailed Goal lifecycle onto the five manager-home buckets.
- * The home shows populated active lanes and collapses terminal work into history.
+ * Project the detailed Goal lifecycle onto the manager-home buckets. Execution
+ * is read through the shared claim/execution rule, so a host claim gets its own
+ * lane instead of borrowing the running one. The home shows populated active
+ * lanes and collapses terminal work into history.
  */
 export function workspaceHomeLaneForGoal(goal: WorkspaceGoal): WorkspaceHomeLane {
   if (goal.activationState === "stopped" || goal.state === "已停止") return "stopped";
   if (goal.state === "已完成") return "history";
   if (goal.needsYou || goal.state === "等你") return "needs_you";
-  if (goal.execution?.kind === "running" || goal.state === "需修复") return "running";
+  if (goal.state === "需修复") return "running";
+  const work = goalWorkKind(goal);
+  if (work === "executing") return "running";
+  if (work === "claimed") return "claimed";
   if (goal.state === "安静运行") return "observing";
   return "scheduled";
 }
